@@ -18,22 +18,16 @@ To Implementat an Auto Regressive Model using Python
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import statsmodels.api as sm
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.ar_model import AutoReg
 from sklearn.metrics import mean_squared_error
 
-# Load dataset
-file_path = 'Sunspots.csv'
-data = pd.read_csv(file_path)
+data = pd.read_csv("Sunspots.csv")
 
-# Show column names to verify
 print("Columns in dataset:", data.columns)
 print(data.head())
 
-# ---- Adjust column names here ----
-# Try to guess: if 'Date' exists use it, else if 'Month' or 'Year' exists use that
 if 'Date' in data.columns:
     date_col = 'Date'
 elif 'Month' in data.columns:
@@ -43,7 +37,6 @@ elif 'Year' in data.columns:
 else:
     raise KeyError("No suitable date column found! Please check dataset.")
 
-# Try to guess value column
 if 'Sunspots' in data.columns:
     value_col = 'Sunspots'
 elif 'Monthly Mean Total Sunspot Number' in data.columns:
@@ -53,65 +46,45 @@ elif 'SSN' in data.columns:
 else:
     raise KeyError("No suitable sunspot value column found! Please check dataset.")
 
-# Convert date column to datetime
 data[date_col] = pd.to_datetime(data[date_col], infer_datetime_format=True, errors='coerce')
-data.set_index(date_col, inplace=True)
+data = data.set_index(date_col)
 
-# Use the selected sunspot values
 sunspot_values = data[value_col]
-
-# If dataset is daily, resample to monthly
 monthly_sunspots = sunspot_values.resample('M').mean()
 
-# ---- ADF Test ----
 result = adfuller(monthly_sunspots.dropna())
 print(f'ADF Statistic: {result[0]}')
 print(f'p-value: {result[1]}')
-if result[1] < 0.05:
-    print("The data is stationary.")
-else:
-    print("The data is non-stationary.")
+print("The data is stationary." if result[1] < 0.05 else "The data is non-stationary.")
 
-# ---- Train/Test Split ----
 train_size = int(len(monthly_sunspots) * 0.8)
 train, test = monthly_sunspots[:train_size], monthly_sunspots[train_size:]
 
-# ---- ACF & PACF ----
 fig, ax = plt.subplots(2, figsize=(8, 6))
 plot_acf(train.dropna(), ax=ax[0], title='Autocorrelation Function (ACF)')
 plot_pacf(train.dropna(), ax=ax[1], title='Partial Autocorrelation Function (PACF)')
 plt.show()
 
-# ---- Fit AR Model ----
 ar_model = AutoReg(train.dropna(), lags=13).fit()
-
-# ---- Predictions ----
 ar_pred = ar_model.predict(start=len(train), end=len(train) + len(test) - 1, dynamic=False)
 
-# ---- Plot Predictions vs Actual ----
 plt.figure(figsize=(10, 4))
 plt.plot(test, label='Test Data')
 plt.plot(ar_pred, label='AR Model Prediction', color='red')
 plt.title('AR Model Prediction vs Test Data (Sunspots)')
-plt.xlabel('Time')
-plt.ylabel('Sunspots')
-plt.legend()
-plt.show()
+plt.xlabel('Time'); plt.ylabel('Sunspots')
+plt.legend(); plt.show()
 
-# ---- Mean Squared Error ----
 mse = mean_squared_error(test, ar_pred)
 print(f'Mean Squared Error (MSE): {mse}')
 
-# ---- Plot Train, Test, and Predictions ----
 plt.figure(figsize=(10, 4))
 plt.plot(train, label='Train Data')
 plt.plot(test, label='Test Data')
 plt.plot(ar_pred, label='AR Model Prediction', color='red')
 plt.title('Train, Test, and AR Model Prediction (Sunspots)')
-plt.xlabel('Time')
-plt.ylabel('Sunspots')
-plt.legend()
-plt.show()
+plt.xlabel('Time'); plt.ylabel('Sunspots')
+plt.legend(); plt.show()
 ```
 
 ### OUTPUT:
